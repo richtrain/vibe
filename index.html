@@ -1,8 +1,14 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="바이브코딩으로 만들어봄. by tony">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Vibe Coded Products">
+<meta property="og:site_name" content="Vibe Coded Products">
+<meta property="og:description" content="바이브코딩으로 만들어봄. by tony">
+<meta name="twitter:card" content="summary">
 <title>Vibe Coded Products</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <style id="sty">
@@ -139,6 +145,13 @@ label input:focus,label textarea:focus{border-color:var(--brand)}
 <script type="application/json" id="data">{"items": [{"id": "stockvm", "title": "주식자판기", "url": "https://stockvm.onrender.com/", "tag": "투자", "note": "DART 공시와 재무 데이터로 종목 분석 리포트를 뽑고, 저평가 종목을 매일 골라주는 AI 분석 도구.", "added": 1787702400000}, {"id": "placepanda", "title": "플레이스판다", "url": "https://placepanda.vercel.app/", "tag": "마케팅", "note": "네이버 플레이스 키워드 검색량·경쟁도 조회와 순위 변화 추적을 한 화면에서. 뷰티샵 원장용.", "added": 1787788800000}]}</script>
 <script id="app">
 (function(){
+  var DESC='바이브코딩으로 만들어 띄워둔 것들을 한 곳에. by tony';
+  var META='<meta name="description" content="'+DESC+'">'+
+    '<meta property="og:type" content="website">'+
+    '<meta property="og:title" content="Vibe Coded Products">'+
+    '<meta property="og:site_name" content="Vibe Coded Products">'+
+    '<meta property="og:description" content="'+DESC+'">'+
+    '<meta name="twitter:card" content="summary">';
   var FONTS='<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">';
   var state, api=null, ready=false, ui={q:'',tag:'',sort:'new'}, armed=null;
 
@@ -162,7 +175,7 @@ label input:focus,label textarea:focus{border-color:var(--brand)}
     var json=JSON.stringify(s).replace(/</g,'\\u003c');
     return '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'+
       '<meta name="viewport" content="width=device-width, initial-scale=1">\n'+
-      '<title>Vibe Coded Products<\/title>\n'+FONTS+'\n<style id="sty">'+sty+'<\/style>\n<\/head>\n<body>\n'+
+      '<title>Vibe Coded Products<\/title>\n'+META+'\n'+FONTS+'\n<style id="sty">'+sty+'<\/style>\n<\/head>\n<body>\n'+
       '<div id="root"><\/div>\n<div id="toast"><\/div>\n'+
       '<script type="application/json" id="data">'+json+'<\/script>\n'+
       '<script id="app">'+app+'<\/script>\n<\/body>\n<\/html>';
