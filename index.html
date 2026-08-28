@@ -192,8 +192,9 @@ label input:focus,label textarea:focus{border-color:var(--brand)}
 
   try{ state=JSON.parse(document.getElementById('data').textContent)||{}; }catch(e){ state={}; }
   if(!Array.isArray(state.items)) state.items=[];
-  try{ var LS=localStorage.getItem('vibeshelf.v1');
-       if(LS){ var pp=JSON.parse(LS); if(pp&&Array.isArray(pp.items)) state=pp; } }catch(e){}
+  if(typeof state.rev!=='number') state.rev=0;
+  try{ var LS=JSON.parse(localStorage.getItem('vibeshelf.v1')||'null');
+       if(LS&&Array.isArray(LS.items)&&(LS.rev||0)>state.rev) state=LS; }catch(e){}
 
   var root=document.getElementById('root');
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -208,26 +209,97 @@ label input:focus,label textarea:focus{border-color:var(--brand)}
     var sty=document.getElementById('sty').textContent;
     var app=document.getElementById('app').textContent;
     var json=JSON.stringify(s).replace(/</g,'\\u003c');
-    return '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'+
+    return '<!doctype html>\n<html lang="ko">\n<head>\n<meta charset="utf-8">\n'+
       '<meta name="viewport" content="width=device-width, initial-scale=1">\n'+
       '<title>Vibe Coded Products<\/title>\n'+META+'\n'+FONTS+'\n<style id="sty">'+sty+'<\/style>\n<\/head>\n<body>\n'+
       '<div id="root"><\/div>\n<div id="toast"><\/div>\n'+
       '<script type="application/json" id="data">'+json+'<\/script>\n'+
       '<script id="app">'+app+'<\/script>\n<\/body>\n<\/html>';
   }
-  function readOnly(){document.body.classList.add('ro');}
-  async function persist(){
-    try{ localStorage.setItem('vibeshelf.v1', JSON.stringify(state)); toast('​저장됨 — 이 브라우저에'.replace('​','')); }
-    catch(e){ toast('이 브라우저에 저장할 수 없어. 내보내기로 백업해줘.'); }
-  }
+  function readOnly(){setAdmin(false);}
+
+  /* ---------- 로컬 저장 ---------- */
+  function saveLocal(){ try{ localStorage.setItem('vibeshelf.v1', JSON.stringify(state)); }catch(e){} }
+
   function exportDoc(){
     try{
       var blob=new Blob([buildDoc(state)],{type:'text/html;charset=utf-8'});
       var a=document.createElement('a');a.href=URL.createObjectURL(blob);
       a.download='index.html';document.body.appendChild(a);a.click();
       setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);
-      toast('index.html 로 내보냈어. 이걸 다시 배포하면 내용이 고정돼.');
+      toast('index.html 로 내보냈어. 이걸 배포하면 내용이 고정돼.');
     }catch(e){ toast('내보내기에 실패했어.'); }
+  }
+
+  /* ---------- GitHub 커밋 ---------- */
+  var GH_KEY='vibeshelf.gh';
+  var gh={repo:'',branch:'main',path:'index.html',token:''};
+  try{ var _g=JSON.parse(localStorage.getItem(GH_KEY)||'null'); if(_g) for(var k in _g) gh[k]=_g[k]; }catch(e){}
+  function ghReady(){ return !!(gh.repo && gh.token); }
+  function ghStore(){ try{ localStorage.setItem(GH_KEY, JSON.stringify(gh)); }catch(e){} }
+  function ghForget(){ gh={repo:'',branch:'main',path:'index.html',token:''};
+    try{ localStorage.removeItem(GH_KEY); }catch(e){} ghBadge(); }
+  function b64(str){
+    var bytes=new TextEncoder().encode(str), bin='';
+    for(var i=0;i<bytes.length;i++) bin+=String.fromCharCode(bytes[i]);
+    return btoa(bin);
+  }
+  function ghApi(path,opts){
+    opts=opts||{}; opts.headers={
+      'Authorization':'Bearer '+gh.token,
+      'Accept':'application/vnd.github+json',
+      'X-GitHub-Api-Version':'2022-11-28'
+    };
+    return fetch('https://api.github.com'+path,opts);
+  }
+  async function ghMsg(r){
+    var t=''; try{ var j=await r.json(); t=j.message||''; }catch(e){}
+    if(r.status===401) return '토큰이 올바르지 않아 (401)';
+    if(r.status===403) return '권한이 없거나 요청이 너무 잦아 (403)';
+    if(r.status===404) return '저장소나 파일 경로를 못 찾겠어 (404) — 저장소 이름, 경로, 토큰 권한을 확인해줘';
+    return (t||'알 수 없는 오류')+' ('+r.status+')';
+  }
+  function ghUrl(){ return '/repos/'+gh.repo+'/contents/'+gh.path.split('/').map(encodeURIComponent).join('/'); }
+  async function ghSha(){
+    var r=await ghApi(ghUrl()+'?ref='+encodeURIComponent(gh.branch)+'&t='+Date.now());
+    if(r.status===200){ var j=await r.json(); return j.sha; }
+    if(r.status===404) return null;
+    throw new Error(await ghMsg(r));
+  }
+  async function ghCommit(html){
+    var body={message:'Update '+gh.path+' via vibe shelf', content:b64(html), branch:gh.branch};
+    var sha=await ghSha(); if(sha) body.sha=sha;
+    var r=await ghApi(ghUrl(),{method:'PUT',body:JSON.stringify(body)});
+    if(r.status===409||r.status===422){
+      var s2=await ghSha(); if(s2) body.sha=s2; else delete body.sha;
+      r=await ghApi(ghUrl(),{method:'PUT',body:JSON.stringify(body)});
+    }
+    if(!r.ok) throw new Error(await ghMsg(r));
+  }
+  async function persist(){
+    if(!ready){toast('저장 준비 중이야. 잠깐 뒤에 다시.');return;}
+    state.rev=Date.now();
+    saveLocal();
+    if(api){
+      toast('저장 중…');
+      try{ await api.publish(buildDoc(state)); }
+      catch(e){
+        var c=(e&&e.code)||'upstream_error';
+        if(c==='conflict'){toast('다른 곳에서 먼저 저장됐어. 최신 버전으로 새로고침돼.');}
+        else if(c==='not_writer'||c==='not_granted'||c==='not_declared'||c==='consent_required'||c==='capability_disabled'){readOnly();toast('보기 전용 화면이라 저장되지 않았어.');}
+        else if(c==='rate_limited'){toast('저장이 너무 잦아. 잠깐 뒤에 다시.');}
+        else if(c==='too_large'){toast('내용이 너무 커서 저장할 수 없어.');}
+        else{toast('저장에 실패했어. 다시 시도해줘.');}
+      }
+      return;
+    }
+    if(ghReady()){
+      toast('GitHub에 올리는 중…');
+      try{ await ghCommit(buildDoc(state)); toast('커밋 완료 — 1~2분 뒤 사이트에 반영돼.'); }
+      catch(e){ toast('GitHub 저장 실패: '+((e&&e.message)||e)); }
+      return;
+    }
+    toast('이 브라우저에만 저장됐어. GitHub를 연결하면 사이트에 바로 반영돼.');
   }
 
   /* ---------- shell ---------- */
@@ -238,17 +310,28 @@ label input:focus,label textarea:focus{border-color:var(--brand)}
         '<div class="meta">제품 <span id="cnt">0</span> · 태그 <span id="tcnt">0</span></div>'+
       '</div></div></header>'+
       '<div class="inner">'+
-        '<div class="robar">이 브라우저에만 저장돼. 다른 기기에서도 보이게 하려면 내보내기 후 다시 배포해줘.</div>'+
+        '<div class="robar" id="robar"></div>'+
         '<div class="bar">'+
           '<div class="field"><input id="q" type="search" placeholder="이름, 설명, 주소로 검색" autocomplete="off"></div>'+
           '<select id="sort"><option value="new">최신순</option><option value="old">오래된순</option><option value="az">가나다순</option></select>'+
           '<button class="btn ghost" id="bulkBtn">여러 개 붙여넣기</button>'+'<button class="btn ghost" id="expBtn">내보내기</button>'+
-          '<button class="btn" id="addBtn">+ 제품 추가</button>'+'<span class="adminbar"><span class="dot"></span>관리자 <button id="signOutBtn">해제</button></span>'+
+          '<button class="btn" id="addBtn">+ 제품 추가</button>'+'<span class="adminbar"><span class="dot"></span>관리자 <button id="ghBtn">GitHub</button> <button id="signOutBtn">해제</button></span>'+
         '</div>'+
         '<div class="chips" id="chips"></div>'+
         '<div class="grid" id="grid"></div>'+
         '<div class="colophon"><span>by. tony</span><span id="stamp"></span></div>'+
       '</div>'+
+      '<div class="scrim" id="ghScrim"><div class="sheet" role="dialog" aria-modal="true">'+
+        '<header><h2>GitHub 연결</h2><button class="x" id="ghClose" aria-label="닫기">&times;</button></header>'+
+        '<div class="in">'+
+          '<label>저장소<input id="ghRepo" placeholder="richtrain/vibe" autocapitalize="off" autocomplete="off"></label>'+
+          '<label>브랜치<input id="ghBranch" placeholder="main" autocapitalize="off" autocomplete="off"></label>'+
+          '<label>파일 경로<input id="ghPath" placeholder="index.html" autocapitalize="off" autocomplete="off"></label>'+
+          '<label>토큰<input id="ghToken" type="password" placeholder="github_pat_..." autocomplete="off">'+
+            '<span class="hint">GitHub → Settings → Developer settings → Personal access tokens → <b>Fine-grained tokens</b> 에서 이 저장소에만 <b>Contents: Read and write</b> 권한을 준 토큰을 만들어. 토큰은 이 브라우저에만 저장돼.</span></label>'+
+        '</div>'+
+        '<footer><button class="btn ghost" id="ghForget">연결 해제</button><button class="btn ghost" id="ghCancel">취소</button><button class="btn" id="ghOk">연결 확인 후 저장</button></footer>'+
+      '</div></div>'+
       '<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="shTitle">'+
         '<header><h2 id="shTitle">제품 추가</h2><button class="x" id="closeBtn" aria-label="닫기">&times;</button></header>'+
         '<div class="in" id="formOne">'+
@@ -270,13 +353,58 @@ label input:focus,label textarea:focus{border-color:var(--brand)}
     document.getElementById('sort').addEventListener('change',function(e){ui.sort=e.target.value;grid();});
     document.getElementById('addBtn').addEventListener('click',function(){openSheet(null,false);});
     document.getElementById('signOutBtn').addEventListener('click',signOut);
+    document.getElementById('ghBtn').addEventListener('click',ghOpen);
+    document.getElementById('ghClose').addEventListener('click',ghCloseSheet);
+    document.getElementById('ghCancel').addEventListener('click',ghCloseSheet);
+    document.getElementById('ghForget').addEventListener('click',function(){ghForget();ghCloseSheet();toast('GitHub 연결을 해제했어.');});
+    document.getElementById('ghOk').addEventListener('click',ghConnect);
+    document.getElementById('ghScrim').addEventListener('mousedown',function(e){if(e.target.id==='ghScrim')ghCloseSheet();});
+    ghBadge();
     document.getElementById('bulkBtn').addEventListener('click',function(){openSheet(null,true);});
     document.getElementById('expBtn').addEventListener('click',exportDoc);
     document.getElementById('closeBtn').addEventListener('click',close);
     document.getElementById('cancelBtn').addEventListener('click',close);
     document.getElementById('saveBtn').addEventListener('click',commit);
     document.getElementById('scrim').addEventListener('mousedown',function(e){if(e.target.id==='scrim')close();});
-    document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'){close();ghCloseSheet();}});
+  }
+
+  function ghBadge(){
+    var b=document.getElementById('ghBtn'); if(!b)return;
+    b.textContent = ghReady()? 'GitHub 연결됨' : 'GitHub 연결';
+    b.style.borderColor = ghReady()? 'var(--line)' : 'var(--signal)';
+    b.style.color = ghReady()? 'var(--ink2)' : 'var(--signal)';
+    var r=document.getElementById('robar');
+    if(r) r.textContent = api ? '관리자 모드 — 변경하면 곧바로 저장돼.'
+      : ghReady() ? '관리자 모드 — 변경하면 GitHub에 커밋되고 1~2분 뒤 사이트에 반영돼.'
+      : '관리자 모드 — 지금은 이 브라우저에만 저장돼. GitHub를 연결하면 사이트에 바로 반영돼.';
+  }
+  function ghOpen(){
+    document.getElementById('ghRepo').value=gh.repo||'';
+    document.getElementById('ghBranch').value=gh.branch||'main';
+    document.getElementById('ghPath').value=gh.path||'index.html';
+    document.getElementById('ghToken').value=gh.token||'';
+    document.getElementById('ghScrim').classList.add('on');
+    setTimeout(function(){document.getElementById('ghRepo').focus();},30);
+  }
+  function ghCloseSheet(){document.getElementById('ghScrim').classList.remove('on');}
+  async function ghConnect(){
+    var repo=document.getElementById('ghRepo').value.trim().replace(/^https?:\/\/github\.com\//,'').replace(/\.git$/,'').replace(/\/$/,'');
+    var branch=document.getElementById('ghBranch').value.trim()||'main';
+    var path=document.getElementById('ghPath').value.trim().replace(/^\//,'')||'index.html';
+    var token=document.getElementById('ghToken').value.trim();
+    if(!/^[^\/\s]+\/[^\/\s]+$/.test(repo)){toast('저장소는 사용자명/저장소명 형식으로 적어줘.');return;}
+    if(!token){toast('토큰을 입력해줘.');return;}
+    var prev={repo:gh.repo,branch:gh.branch,path:gh.path,token:gh.token};
+    gh={repo:repo,branch:branch,path:path,token:token};
+    toast('연결 확인 중…');
+    try{
+      await ghSha();
+      ghStore(); ghBadge(); ghCloseSheet();
+      toast('연결됐어. 이제 추가·수정하면 바로 커밋돼.');
+    }catch(e){
+      gh=prev; toast('연결 실패: '+((e&&e.message)||e));
+    }
   }
 
   var editing=null,bulk=false;
