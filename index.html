@@ -3,13 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="바이브코딩으로 만들어 띄워둔 것들을 한 곳에. by tony">
+<meta name="description" content="바이브코딩으로 만든 여러 서비스">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Vibe Coded Products">
-<meta property="og:site_name" content="Vibe Coded Products">
-<meta property="og:description" content="바이브코딩으로 만들어 띄워둔 것들을 한 곳에. by tony">
+<meta name="keywords" content="토니바이브, 바이브코딩">
+<meta name="naver-site-verification" content="da049858125652d25b3b75f7326ea1d7724a9f91">
+<meta property="og:title" content="토니바이브-tony vibe products">
+<meta property="og:site_name" content="Tony Vibe Products">
+<meta property="og:description" content="바이브코딩으로 만든 여러 서비스">
 <meta name="twitter:card" content="summary">
-<title>Vibe Coded Products</title>
+<title>토니바이브-tony vibe products</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <style id="sty">
 *,*::before,*::after{box-sizing:border-box}
@@ -44,7 +46,7 @@ body{background:var(--bg);color:var(--ink);
 
 /* ---- masthead ---- */
 .mast{padding:36px 0 0}
-.masttop{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;
+.masttop{display:flex;justify-content:space-between;align-items:baseline;gap:12px 20px;flex-wrap:wrap;
   padding-bottom:15px;border-bottom:1px solid var(--line)}
 h1{font-family:"Syne","Instrument Sans",sans-serif;font-weight:700;
   font-size:clamp(25px,3.4vw,34px);line-height:1.06;letter-spacing:-.03em}
@@ -151,18 +153,22 @@ label input:focus,label textarea:focus{border-color:var(--brand)}
 </style>
 </head>
 <body>
-<div id="root"></div>
+<div id="root"><div class="inner"><h1>Tony Vibe Products</h1><p>바이브코딩으로 만든 여러 서비스</p><ul><li><a href="https://aworld-flame.vercel.app/">AWORLD</a> <em>부동산</em> — 전주 아파트 월드컵으로 취향을 겨루고, 실거래가와 거래량을 확인하는 익명 커뮤니티.</li><li><a href="https://placepanda.vercel.app/">플레이스판다</a> <em>마케팅</em> — 네이버 플레이스 키워드 검색량·경쟁도 조회와 순위 변화 추적을 한 화면에서. 뷰티샵 원장용.</li><li><a href="https://stockvm.onrender.com/">주식자판기</a> <em>투자</em> — DART 공시와 재무 데이터로 종목 분석 리포트를 뽑고, 저평가 종목을 매일 골라주는 AI 분석 도구.</li></ul></div></div>
 <div id="toast"></div>
 <script type="application/json" id="data">{"items": [{"id": "stockvm", "title": "주식자판기", "url": "https://stockvm.onrender.com/", "tag": "투자", "note": "DART 공시와 재무 데이터로 종목 분석 리포트를 뽑고, 저평가 종목을 매일 골라주는 AI 분석 도구.", "added": 1787702400000}, {"id": "placepanda", "title": "플레이스판다", "url": "https://placepanda.vercel.app/", "tag": "마케팅", "note": "네이버 플레이스 키워드 검색량·경쟁도 조회와 순위 변화 추적을 한 화면에서. 뷰티샵 원장용.", "added": 1787788800000}, {"id": "aworld", "title": "AWORLD", "url": "https://aworld-flame.vercel.app/", "tag": "부동산", "note": "전주 아파트 월드컵으로 취향을 겨루고, 실거래가와 거래량을 확인하는 익명 커뮤니티.", "added": 1787875200000}]}</script>
 <script id="app">
 (function(){
-  var DESC='바이브코딩으로 만들어 띄워둔 것들을 한 곳에. by tony';
+  var DESC='바이브코딩으로 만든 여러 서비스';
   var META='<meta name="description" content="'+DESC+'">'+
     '<meta property="og:type" content="website">'+
-    '<meta property="og:title" content="Vibe Coded Products">'+
-    '<meta property="og:site_name" content="Vibe Coded Products">'+
+    '<meta name="keywords" content="토니바이브, 바이브코딩">'+
+    '<meta name="naver-site-verification" content="da049858125652d25b3b75f7326ea1d7724a9f91">'+
+    '<meta property="og:title" content="토니바이브-tony vibe products">'+
+    '<meta property="og:site_name" content="Tony Vibe Products">'+
     '<meta property="og:description" content="'+DESC+'">'+
-    '<meta name="twitter:card" content="summary">';
+    '<meta name="twitter:card" content="summary">'+
+    '<meta property="og:url" content="https://vibe-sable.vercel.app/">'+
+    '<link rel="canonical" href="https://vibe-sable.vercel.app/">';
   var FONTS='<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">';
   var ADMIN_KEY='tony';   // 관리자 열쇠말 — 바꾸고 싶으면 이 값만 고치면 돼
   var state, api=null, ready=false, ui={q:'',tag:'',sort:'new'}, armed=null, isAdmin=false;
@@ -205,14 +211,25 @@ label input:focus,label textarea:focus{border-color:var(--brand)}
   function pad2(n){return (n<10?'0':'')+n;}
   function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('on');},2600);}
 
+  function staticList(s){
+    var rows=(s.items||[]).slice().sort(function(a,b){return (b.added||0)-(a.added||0);})
+      .map(function(i){
+        return '<li><a href="'+esc(i.url)+'">'+esc(i.title)+'</a>'+
+          (i.tag?' <em>'+esc(i.tag)+'</em>':'')+
+          (i.note?' — '+esc(i.note):'')+'</li>';
+      }).join('');
+    return '<div class="inner"><h1>Tony Vibe Products</h1>'+
+      '<p>바이브코딩으로 만든 여러 서비스</p>'+
+      '<ul>'+rows+'</ul></div>';
+  }
   function buildDoc(s){
     var sty=document.getElementById('sty').textContent;
     var app=document.getElementById('app').textContent;
     var json=JSON.stringify(s).replace(/</g,'\\u003c');
     return '<!doctype html>\n<html lang="ko">\n<head>\n<meta charset="utf-8">\n'+
       '<meta name="viewport" content="width=device-width, initial-scale=1">\n'+
-      '<title>Vibe Coded Products<\/title>\n'+META+'\n'+FONTS+'\n<style id="sty">'+sty+'<\/style>\n<\/head>\n<body>\n'+
-      '<div id="root"><\/div>\n<div id="toast"><\/div>\n'+
+      '<title>토니바이브-tony vibe products<\/title>\n'+META+'\n'+FONTS+'\n<style id="sty">'+sty+'<\/style>\n<\/head>\n<body>\n'+
+      '<div id="root">'+staticList(s)+'<\/div>\n<div id="toast"><\/div>\n'+
       '<script type="application/json" id="data">'+json+'<\/script>\n'+
       '<script id="app">'+app+'<\/script>\n<\/body>\n<\/html>';
   }
@@ -306,7 +323,7 @@ label input:focus,label textarea:focus{border-color:var(--brand)}
   function shell(){
     root.innerHTML=
       '<header class="mast"><div class="inner"><div class="masttop">'+
-        '<div><h1>Vibe Coded Products</h1><p class="by">by. tony</p></div>'+
+        '<div><h1>Tony Vibe Products</h1></div>'+
         '<div class="meta">제품 <span id="cnt">0</span> · 태그 <span id="tcnt">0</span></div>'+
       '</div></div></header>'+
       '<div class="inner">'+
@@ -319,7 +336,7 @@ label input:focus,label textarea:focus{border-color:var(--brand)}
         '</div>'+
         '<div class="chips" id="chips"></div>'+
         '<div class="grid" id="grid"></div>'+
-        '<div class="colophon"><span>by. tony</span><span id="stamp"></span></div>'+
+        '<div class="colophon"><span>Tony Vibe Products</span><span id="stamp"></span></div>'+
       '</div>'+
       '<div class="scrim" id="ghScrim"><div class="sheet" role="dialog" aria-modal="true">'+
         '<header><h2>GitHub 연결</h2><button class="x" id="ghClose" aria-label="닫기">&times;</button></header>'+
